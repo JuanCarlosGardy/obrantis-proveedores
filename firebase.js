@@ -6,12 +6,12 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-
 
 // 1) Pega aquí tu firebaseConfig:
 export const firebaseConfig = {
-  apiKey: "AIzaSyAM39Fp0SbBWAf7EjLaG-m5LlOylSuZD3Q",
-  authDomain: "proveedores-facturas-pro.firebaseapp.com",
-  projectId: "proveedores-facturas-pro",
-  storageBucket: "proveedores-facturas-pro.firebasestorage.app",
-  messagingSenderId: "494620791690",
-  appId: "1:494620791690:web:2ff678bde3c22021092e73"
+  apiKey: "AIzaSyD7tnF2e4lKHut7_2Abcb3bOBeU0DImBDY",
+  authDomain: "obrantis-proveedores-facturas.firebaseapp.com",
+  projectId: "obrantis-proveedores-facturas",
+  storageBucket: "obrantis-proveedores-facturas.firebasestorage.app",
+  messagingSenderId: "921140381213",
+  appId: "1:921140381213:web:c744fa58681fef32eb28f4"
 };
 
 export const app = initializeApp(firebaseConfig);
