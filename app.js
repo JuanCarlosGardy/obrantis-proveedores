@@ -95,8 +95,8 @@ function safeNum(v){
 /* ---------------------------
    PIN local (bloqueo UI)
 ----------------------------*/
-const PIN_KEY = "barquilla_pin_hash_v1";
-const PIN_UNLOCK = "barquilla_pin_unlocked_v1";
+const PIN_KEY = "OBRANTIS_pin_hash_v1";
+const PIN_UNLOCK = "OBRANTIS_pin_unlocked_v1";
 
 async function sha256(text){
   const enc = new TextEncoder().encode(text);
@@ -1440,14 +1440,14 @@ function runMonthlyReport(yyyyMm){
 
   const list = invoicesInRange(start, end);
   const sum = summarizeInvoices(list);
-  renderReport("Informe mensual Barquilla", `Mes: ${yyyyMm}`, list, sum);
+  renderReport("Informe mensual OBRANTIS", `Mes: ${yyyyMm}`, list, sum);
 }
 
 function runQuarterReport(year, q){
   const { s, e } = quarterRange(year, q);
   const list = invoicesInRange(s, e);
   const sum = summarizeInvoices(list);
-  renderReport("Informe trimestral Barquilla", `Año: ${year} · Q${q} (${s} a ${e})`, list, sum);
+  renderReport("Informe trimestral OBRANTIS", `Año: ${year} · Q${q} (${s} a ${e})`, list, sum);
 }
 
 /* ---------------------------
