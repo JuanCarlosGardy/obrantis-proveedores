@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Barquilla | Proveedores & Facturas</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <div class="brand__title">Restaurante Barquilla</div>
+      <div class="brand__sub">Proveedores · Facturas · Informes</div>
+    </div>
+
+    <div class="topbar__actions">
+      <button id="btnLogout" class="btn btn--ghost" title="Cerrar sesión">Salir</button>
+    </div>
+  </header>
+
+  <!-- Gate PIN (UI extra) -->
+  <section id="pinGate" class="gate hidden">
+    <div class="gate__card">
+      <h2>Acceso con PIN</h2>
+      <p class="muted">Introduce tu PIN para desbloquear la aplicación en este dispositivo.</p>
+      <div class="row">
+        <input id="pinInput" class="input" type="password" inputmode="numeric" placeholder="PIN" />
+        <button id="btnPinUnlock" class="btn">Entrar</button>
+      </div>
+      <div class="muted small">Consejo: el PIN es un bloqueo local. La protección real es tu usuario/contraseña de Firebase.</div>
+    </div>
+  </section>
+
+  <!-- Login Firebase -->
+  <section id="login" class="gate">
+    <div class="gate__card">
+      <h2>Acceso</h2>
+      <p class="muted">Inicia sesión con tu usuario de Firebase.</p>
+      <div class="stack">
+        <input id="email" class="input" type="email" placeholder="Email" autocomplete="username" />
+        <input id="pass" class="input" type="password" placeholder="Contraseña" autocomplete="current-password" />
+        <button id="btnLogin" class="btn">Entrar</button>
+        <div id="loginMsg" class="muted small"></div>
+      </div>
+
+      <hr class="sep" />
+
+      <details>
+        <summary>Configurar / cambiar PIN local</summary>
+        <div class="stack mt">
+          <input id="pinNew" class="input" type="password" inputmode="numeric" placeholder="Nuevo PIN" />
+          <input id="pinNew2" class="input" type="password" inputmode="numeric" placeholder="Repite PIN" />
+          <button id="btnSetPin" class="btn btn--secondary">Guardar PIN</button>
+          <div class="muted small">El PIN se guarda cifrado (hash) en este navegador.</div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <main id="app" class="app hidden">
+    <nav class="tabs">
+      <button class="tab is-active" data-tab="providers">Proveedores</button>
+      <button class="tab" data-tab="invoices">Facturas</button>
+      <button class="tab" data-tab="reports">Informes</button>
+    </nav>
+
+    <!-- PROVEEDORES -->
+    <section id="tab-providers" class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Proveedores</div>
+        <button id="btnAddProvider" class="btn">+ Nuevo proveedor</button>
+      </div>
+
+      <div class="filters">
+        <input id="provSearch" class="input" placeholder="Buscar (nombre, CIF, email…)" />
+        <select id="provCategory" class="input">
+          <option value="">Todas las categorías</option>
+          <option>Alimentación</option>
+          <option>Bebidas</option>
+          <option>Limpieza</option>
+          <option>Mantenimiento</option>
+          <option>Servicios</option>
+          <option>Otros</option>
+        </select>
+        <select id="provStatus" class="input">
+          <option value="active">Activos</option>
+          <option value="all">Todos</option>
+          <option value="inactive">Inactivos</option>
+        </select>
+      </div>
+
+      <div id="providersList" class="list"></div>
+    </section>
+
+    <!-- FACTURAS -->
+    <section id="tab-invoices" class="panel hidden">
+      <div class="panel__head">
+        <div class="panel__title">Facturas (todas PAGADAS)</div>
+        <button id="btnAddInvoice" class="btn">+ Nueva factura</button>
+      </div>
+
+     <div class="filters">
+  <input id="invSearch" class="input" placeholder="Buscar (proveedor, nº, concepto…)" />
+  <input id="invMonth" class="input" type="month" />
+  <select id="invProvider" class="input">
+    <option value="">Todos los proveedores</option>
+  </select>
+  <select id="invVatRate" class="input">
+    <option value="">IVA (todos)</option>
+    <option value="0">0%</option>
+    <option value="4">4%</option>
+    <option value="10">10%</option>
+    <option value="21">21%</option>
+  </select>
+</div>
+
+      <div id="invoicesList" class="list"></div>
+    </section>
+
+    <!-- INFORMES -->
+    <section id="tab-reports" class="panel hidden">
+      <div class="panel__head">
+        <div class="panel__title">Informes</div>
+      </div>
+
+      <div class="reports">
+        <div class="card">
+          <h3>Informe mensual</h3>
+          <div class="row">
+            <input id="repMonth" class="input" type="month" />
+            <button id="btnRunMonthly" class="btn">Generar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Informe trimestral</h3>
+          <div class="row">
+            <input id="repYear" class="input" type="number" min="2020" max="2100" placeholder="Año" />
+            <select id="repQuarter" class="input">
+              <option value="1">Q1 (Ene-Mar)</option>
+              <option value="2">Q2 (Abr-Jun)</option>
+              <option value="3">Q3 (Jul-Sep)</option>
+              <option value="4">Q4 (Oct-Dic)</option>
+            </select>
+            <button id="btnRunQuarter" class="btn">Generar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CABECERA SOLO PARA PDF -->
+<div class="report-print-header">
+  <div class="h1">RESTAURANTE BARQUILLA</div>
+  <div class="h2">Informe de proveedores y facturas</div>
+  <div class="meta">
+    <strong>Periodo:</strong> <span id="printPeriodo">—</span> ·
+    <strong>Generado:</strong> <span id="printGenerado">—</span>
+  </div>
+</div>
+
+<div id="reportOut" class="reportOut report-print-root"></div>
+    </section>
+  </main>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__card">
+      <div class="modal__head">
+        <div id="modalTitle" class="modal__title">Modal</div>
+        <button class="btn btn--ghost" data-close="1">✕</button>
+      </div>
+      <div id="modalBody" class="modal__body"></div>
+      <div class="modal__foot">
+        <div id="modalFootLeft"></div>
+        <div class="modal__footRight">
+          <button class="btn btn--ghost" data-close="1">Cancelar</button>
+          <button id="modalSave" class="btn">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toasts" class="toasts"></div>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

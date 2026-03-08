@@ -1,0 +1,538 @@
+:root{
+  --bg:#0b1220;
+  --card:#111b2e;
+  --text:#eaf0ff;
+  --muted:#b9c4e2;
+  --line:#22314e;
+  --accent:#5aa6ff;
+  --danger:#ff5a6a;
+  --ok:#38d39f;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg, #070b14, var(--bg));
+  color: var(--text);
+}
+
+.hidden{ display:none !important; }
+.small{ font-size:12px; }
+.mt{ margin-top:10px; }
+.muted{ color: var(--muted); }
+
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+  position:sticky;
+  top:0;
+  background: rgba(11,18,32,.92);
+  backdrop-filter: blur(10px);
+  z-index:5;
+}
+.brand__title{ font-weight:800; letter-spacing:.2px; }
+.brand__sub{ color: var(--muted); font-size:12px; }
+
+.app{ max-width:1100px; margin: 0 auto; padding: 14px 14px 70px; }
+
+.tabs{
+  display:flex;
+  gap:10px;
+  padding: 10px 0 14px;
+}
+.tab{
+  border:1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+}
+.tab.is-active{
+  background: rgba(90,166,255,.14);
+  border-color: rgba(90,166,255,.35);
+}
+
+.panel{
+  background: rgba(17,27,46,.75);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding: 12px;
+}
+.panel__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding: 4px 2px 12px;
+}
+.panel__title{ font-weight:800; }
+
+.filters{
+  display:grid;
+  grid-template-columns: 1.5fr 1fr 1fr 0.8fr;
+  gap:10px;
+  padding-bottom:12px;
+}
+@media (max-width: 760px){
+  .filters{ grid-template-columns: 1fr; }
+}
+
+.input{
+  width:100%;
+  border:1px solid var(--line);
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius:12px;
+  outline:none;
+}
+.input:focus{
+  border-color: rgba(90,166,255,.6);
+}
+
+.btn{
+  border:1px solid rgba(90,166,255,.45);
+  background: rgba(90,166,255,.18);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:700;
+}
+.btn--secondary{
+  border-color: rgba(185,196,226,.4);
+  background: rgba(185,196,226,.12);
+}
+.btn--ghost{
+  border:1px solid var(--line);
+  background: transparent;
+  font-weight:700;
+}
+
+.list{
+  display:grid;
+  gap:10px;
+}
+.item{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,.18);
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+.item__title{ font-weight:800; }
+.item__meta{ color: var(--muted); font-size:12px; margin-top:4px; }
+.item__actions{ display:flex; gap:8px; align-items:center; }
+.pill{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  color: var(--muted);
+}
+.pill--inactive{ border-color: rgba(255,90,106,.35); color: #ffd6db; }
+
+.gate{
+  min-height: calc(100vh - 70px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 24px 14px;
+}
+.gate__card{
+  width:min(520px, 100%);
+  background: rgba(17,27,46,.78);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+}
+.sep{ border:0; border-top:1px solid var(--line); margin:14px 0; }
+
+.stack{ display:grid; gap:10px; }
+.row{ display:flex; gap:10px; align-items:center; }
+@media (max-width: 520px){
+  .row{ flex-direction:column; align-items:stretch; }
+}
+
+/* Modal con scroll interno y footer fijo */
+.modal{ position:fixed; inset:0; z-index:20; }
+.modal__backdrop{ position:absolute; inset:0; background: rgba(0,0,0,.55); }
+.modal__card{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  width: min(820px, calc(100% - 20px));
+  max-height: calc(100% - 20px);
+  background: rgba(17,27,46,.95);
+  border:1px solid var(--line);
+  border-radius:18px;
+  display:flex;
+  flex-direction:column;
+}
+.modal__head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 12px 12px 10px;
+  border-bottom:1px solid var(--line);
+}
+.modal__title{ font-weight:900; }
+.modal__body{
+  padding: 12px;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+}
+.modal__foot{
+  border-top:1px solid var(--line);
+  padding: 10px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  background: rgba(11,18,32,.92);
+}
+.modal__footRight{ display:flex; gap:10px; }
+
+.form{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+}
+.form .full{ grid-column: 1 / -1; }
+@media (max-width: 760px){
+  .form{ grid-template-columns: 1fr; }
+}
+
+.toasts{
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  display:grid;
+  gap:10px;
+  z-index:30;
+}
+.toast{
+  border:1px solid var(--line);
+  background: rgba(0,0,0,.35);
+  border-radius:14px;
+  padding:10px 12px;
+  max-width: 360px;
+}
+.toast--ok{ border-color: rgba(56,211,159,.35); }
+.toast--err{ border-color: rgba(255,90,106,.45); }
+
+.reports{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+@media (max-width: 920px){ .reports{ grid-template-columns: 1fr; } }
+.card{
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px;
+  background: rgba(0,0,0,.18);
+}
+
+.reportOut{
+  margin-top: 12px;
+  border:1px dashed rgba(185,196,226,.35);
+  border-radius:16px;
+  padding:12px;
+}
+
+/* Impresión A4 */
+@media print{
+  /* Limpieza y look “gestoría” */
+* { box-shadow: none !important; text-shadow: none !important; }
+
+.card, .panel, .box, .section {
+  border: 1px solid #000 !important;
+  border-radius: 0 !important;
+}
+
+/* Evita que el texto salga gris claro (muy típico en modo app) */
+.muted, .sub, .hint, small {
+  color: #000 !important;
+  opacity: 1 !important;
+}
+  /* A4 limpio */
+  @page { size: A4; margin: 12mm; }
+
+  /* Colores correctos en PDF (algunos navegadores los “apagan”) */
+  *{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body{ background:#fff !important; color:#111 !important; }
+
+  /* Ocultar UI que no debe salir en PDF */
+  .topbar,
+  .tabs,
+  .filters,
+  .panel__head,
+  .toasts,
+  #btnLogout,
+  .reports {               /* <-- esto oculta las cajas de mensual + trimestral */
+    display:none !important;
+  }
+
+  /* Ocultar botones dentro del informe generado */
+  .reportOut .row,
+  .reportOut button {
+    display:none !important;
+  }
+
+  /* Dejar el informe como “documento” */
+  .panel{
+    border:none !important;
+    background:#fff !important;
+    padding:0 !important;
+  }
+
+  .reportOut{
+    border:none !important;
+    margin-top:0 !important;
+    padding:0 !important;
+  }
+
+  /* Mejor lectura en impresión */
+  .item{
+    background:#fff !important;
+    border:1px solid #ddd !important;
+  }
+
+  .muted{ color:#444 !important; }
+}
+.repSummary{
+  cursor:pointer;
+  font-weight:700;
+  color: var(--text);
+  list-style: none;
+}
+.repSummary::-webkit-details-marker{ display:none; }
+
+.repContent > div{
+  margin-bottom: 6px;
+}
+/* =========================
+   IMPRESIÓN (PDF / A4)
+   Pegar al FINAL del CSS
+   ========================= */
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+
+  /* Quita fondos/colores “modo app” */
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11pt;
+    line-height: 1.25;
+  }
+
+  /* Ocultar toda la interfaz que no debe ir al PDF */
+  .no-print,
+  button,
+  .btn,
+  .toolbar,
+  nav,
+  header.app-header,
+  footer.app-footer,
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+
+  /* Ocultar textos / controles de “Ver/ocultar…” */
+  .toggle,
+  .toggle-btn,
+  .toggle-link,
+  [data-toggle],
+  [data-action="toggle"],
+  .collapse-toggle {
+    display: none !important;
+  }
+
+  /* Asegura que el área de informe use todo el ancho A4 */
+  .report,
+  #report,
+  #reportRoot,
+  .report-root {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Títulos limpios */
+  h1 { font-size: 16pt; margin: 0 0 6mm 0; }
+  h2 { font-size: 12.5pt; margin: 5mm 0 3mm 0; }
+  h3 { font-size: 11pt; margin: 4mm 0 2mm 0; }
+
+  /* Tablas perfectas para gestoría */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2mm 0 4mm 0;
+  }
+  th, td {
+    border: 1px solid #000;
+    padding: 2mm 2.5mm;
+    vertical-align: top;
+  }
+  th { font-weight: 700; }
+
+  /* Evitar cortes feos */
+  tr, td, th, .card, .section, .block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Enlaces como texto normal (sin colores ni subrayado) */
+  a, a:visited {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+
+  /* Mini cabecera fija opcional si ya tienes un elemento header del informe */
+  .report-print-header {
+    display: block !important;
+    margin-bottom: 6mm;
+  }
+
+  /* Pie con numeración simple (si lo usas con contadores) */
+  .print-footer {
+    position: fixed;
+    bottom: 8mm;
+    left: 12mm;
+    right: 12mm;
+    font-size: 9pt;
+  }
+  /* Cabecera profesional (solo impresión) */
+.report-print-header{
+  display: block !important;
+  border-bottom: 2px solid #000;
+  padding-bottom: 4mm;
+  margin-bottom: 6mm;
+}
+.report-print-header .h1{
+  font-size: 14pt;
+  font-weight: 800;
+  margin: 0 0 1.5mm 0;
+}
+.report-print-header .h2{
+  font-size: 11pt;
+  font-weight: 600;
+  margin: 0;
+}
+.report-print-header .meta{
+  font-size: 10pt;
+  margin-top: 2mm;
+}
+.report-print-header .meta strong{
+  font-weight: 700;
+}
+  /* ===============================
+   MEJORA SALTOS DE PÁGINA EN PDF
+   (pegar dentro de @media print)
+   =============================== */
+
+/* 1) Evita títulos aislados al final de página */
+@media print {
+  h1, h2, h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+
+/* 2) La cabecera nunca debe partirse */
+@media print {
+  .report-print-header {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 3) Bloques típicos del informe: evita que se partan */
+@media print {
+  /* Ajusta aquí según tus clases reales: card, panel, etc. */
+  .card,
+  .panel,
+  .section,
+  .block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 4) Si hay tablas: que no parta filas */
+@media print {
+  table, tr, td, th {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 5) Permite que el contenedor general sí pueda fluir */
+@media print {
+  #reportOut {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+@media print {
+  .report-print-root > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* ===============================
+   LISTADO POR PROVEEDOR (PRINT)
+   - Permite paginar el listado
+   - Evita partir cada proveedor
+   =============================== */
+
+/* 1) El listado completo debe poder romper página (si no, fuerza cortes feos) */
+@media print {
+  .report-print-root {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+}
+
+/* 2) Evita que cada item “Proveedor + Base/IVA” se parta
+   Nota: como tu listado parece estar en líneas (sin tabla),
+   aplicamos reglas a párrafos y elementos de texto dentro del reportOut. */
+@media print {
+  /* Cada línea/bloque de texto del informe */
+  #reportOut p,
+  #reportOut li,
+  #reportOut .row,
+  #reportOut .line,
+  #reportOut .item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* 3) Que “Listado por proveedor” no se quede solo al final de página */
+@media print {
+  /* Si tu título es h2/h3 ya lo cubrimos, pero reforzamos */
+  #reportOut h2,
+  #reportOut h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+}
