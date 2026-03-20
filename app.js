@@ -402,7 +402,7 @@ function openProviderForm(p=null){
   const catWrap = el("div");
   const catLab = el("div","muted small"); catLab.textContent = "Categoría";
   const catSel = el("select","input");
-  ["","Materiales obra","Gestoria","gas-oil","Mantenimiento","Servicios","comida","herramientas","Otros"].forEach(v=>{
+  ["","Materiales obra","Gestoria","gas-oil","Mantenimiento","Servicios","comida","herramientas","Sueldos","Otros"].forEach(v=>{
     const o = el("option");
     o.value = v;
     o.textContent = v || "Selecciona…";
