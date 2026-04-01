@@ -492,11 +492,12 @@ body{
     break-inside: auto;
     page-break-inside: auto;
   }
-@media print {
+
   .report-print-root > * {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+}
   /* ===============================
    LISTADO POR PROVEEDOR (PRINT)
    - Permite paginar el listado
@@ -535,4 +536,18 @@ body{
     page-break-after: avoid;
   }
 }
+}
+.work-ok{
+  color: #1a7f37; /* verde */
+  font-weight: 600;
+}
+
+.work-warning{
+  color: #b7791f; /* amarillo */
+  font-weight: 600;
+}
+
+.work-danger{
+  color: #c53030; /* rojo */
+  font-weight: 700;
 }

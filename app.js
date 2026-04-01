@@ -616,7 +616,16 @@ const totalWork = getWorkTotal(w.id);
 const budget = Number(w.budget || 0);
 const diff = totalWork - budget;
 const pct = budget ? ((diff / budget) * 100) : 0;
-    const meta = el("div","item__meta");
+let statusClass = "work-ok";
+
+if(diff > 0 && pct <= 10){
+  statusClass = "work-warning";
+}
+
+if(pct > 10){
+  statusClass = "work-danger";
+}
+    const meta = el("div",`item__meta ${statusClass}`);
    meta.textContent = `
 ${w.client || "Sin cliente"} · 
 ${w.address || "Sin dirección"} · 
