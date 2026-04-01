@@ -551,3 +551,12 @@ body{
   color: #c53030; /* rojo */
   font-weight: 700;
 }
+.work-alert{
+  margin-top:6px;
+  padding:6px 10px;
+  border-radius:8px;
+  background: rgba(197,48,48,0.15);
+  color: #ff5a6a;
+  font-weight:700;
+  font-size:12px;
+}

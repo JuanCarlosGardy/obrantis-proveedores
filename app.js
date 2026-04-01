@@ -616,6 +616,11 @@ const totalWork = getWorkTotal(w.id);
 const budget = Number(w.budget || 0);
 const diff = totalWork - budget;
 const pct = budget ? ((diff / budget) * 100) : 0;
+let alertMsg = "";
+
+if(diff > 0){
+  alertMsg = "⚠ Esta obra ha superado el presupuesto";
+}
 let statusClass = "work-ok";
 
 if(diff > 0 && pct <= 10){
@@ -626,7 +631,7 @@ if(pct > 10){
   statusClass = "work-danger";
 }
     const meta = el("div",`item__meta ${statusClass}`);
-   meta.textContent = `
+ meta.innerHTML = `
 ${w.client || "Sin cliente"} · 
 ${w.address || "Sin dirección"} · 
 Inicio: ${w.startDate || "—"} · 
@@ -634,6 +639,7 @@ Fin: ${w.endDate || "—"} ·
 Presupuesto interno: ${money(budget)} · 
 Gasto: ${money(totalWork)} · 
 Desviación: ${money(diff)} (${pct.toFixed(1)}%)
+${alertMsg ? `<div class="work-alert">${alertMsg}</div>` : ""}
 `;
 
     left.appendChild(title);
