@@ -58,11 +58,12 @@
   </section>
 
   <main id="app" class="app hidden">
-    <nav class="tabs">
-      <button class="tab is-active" data-tab="providers">Proveedores</button>
-      <button class="tab" data-tab="invoices">Facturas</button>
-      <button class="tab" data-tab="reports">Informes</button>
-    </nav>
+   <nav class="tabs">
+  <button class="tab is-active" data-tab="providers">Proveedores</button>
+  <button class="tab" data-tab="works">Obras</button>
+  <button class="tab" data-tab="invoices">Facturas</button>
+  <button class="tab" data-tab="reports">Informes</button>
+</nav>
 
     <!-- PROVEEDORES -->
     <section id="tab-providers" class="panel">
@@ -91,7 +92,27 @@
 
       <div id="providersList" class="list"></div>
     </section>
+    <!-- OBRAS -->
+    <section id="tab-works" class="panel hidden">
+      <div class="panel__head">
+        <div class="panel__title">Obras</div>
+        <button id="btnAddWork" class="btn">+ Nueva obra</button>
+      </div>
 
+      <div class="filters">
+        <input id="workSearch" class="input" placeholder="Buscar (obra, cliente, dirección…)" />
+        <input id="workBudget" class="input" type="number" step="0.01" placeholder="Presupuesto (€)" />
+        <select id="workStatus" class="input">
+          <option value="all">Todas</option>
+          <option value="open">Abiertas</option>
+          <option value="closed">Cerradas</option>
+        </select>
+        <input id="workStartMonth" class="input" type="month" />
+        <div></div>
+      </div>
+
+      <div id="worksList" class="list"></div>
+    </section>
     <!-- FACTURAS -->
     <section id="tab-invoices" class="panel hidden">
       <div class="panel__head">
@@ -112,6 +133,9 @@
     <option value="10">10%</option>
     <option value="21">21%</option>
   </select>
+  <select id="invWork" class="input">
+  <option value="">Todas las obras</option>
+</select>
 </div>
 
       <div id="invoicesList" class="list"></div>
@@ -124,6 +148,15 @@
       </div>
 
       <div class="reports">
+        <div class="card">
+  <h3>Informe por obra</h3>
+  <div class="row">
+    <select id="repWork" class="input">
+      <option value="">Selecciona obra</option>
+    </select>
+    <button id="btnRunWork" class="btn">Generar</button>
+  </div>
+</div>
         <div class="card">
           <h3>Informe mensual</h3>
           <div class="row">

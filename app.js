@@ -167,6 +167,7 @@ $("#modalSave").addEventListener("click", async ()=>{
 ----------------------------*/
 const providersCol = collection(db, "providers");
 const invoicesCol = collection(db, "invoices");
+const worksCol = collection(db, "works");
 
 /* ---------------------------
    Auth + boot
@@ -242,7 +243,7 @@ document.querySelectorAll(".tab").forEach(btn=>{
     document.querySelectorAll(".tab").forEach(b=>b.classList.remove("is-active"));
     btn.classList.add("is-active");
     const tab = btn.dataset.tab;
-    ["providers","invoices","reports"].forEach(t=>{
+    ["providers","works","invoices","reports"].forEach(t=>{
       $(`#tab-${t}`).classList.toggle("hidden", t !== tab);
     });
   });
@@ -259,7 +260,12 @@ $("#provStatus").addEventListener("change", ()=> renderProviders());
 
 let providersCache = [];
 let invoicesCache = [];
+let worksCache = [];
+$("#btnAddWork")?.addEventListener("click", ()=> openWorkForm());
 
+$("#workSearch")?.addEventListener("input", ()=> renderWorks());
+$("#workStatus")?.addEventListener("change", ()=> renderWorks());
+$("#workStartMonth")?.addEventListener("change", ()=> renderWorks());
 async function fetchProviders(){
   // Nota: para filtros complejos sin índices, traemos “los últimos 1000” y filtramos en cliente (uso personal).
   const snap = await getDocs(query(providersCol, orderBy("createdAt","desc"), limit(1000)));
@@ -541,7 +547,275 @@ async function deleteProviderFlow(p){
   });
   $("#modalSave").textContent = "Borrar";
 }
+/* ---------------------------
+   OBRAS
+----------------------------*/
+async function fetchWorks(){
+  const snap = await getDocs(query(worksCol, orderBy("createdAt","desc"), limit(1000)));
+  worksCache = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+}
 
+function getWorkStatus(work){
+  return work.endDate ? "closed" : "open";
+}
+function getWorkTotal(workId){
+  if(!workId) return 0;
+
+  let total = 0;
+
+  for(const inv of invoicesCache){
+    if(String(inv.workId || "") === String(workId)){
+      total += safeNum(inv.total);
+    }
+  }
+
+  return +total.toFixed(2);
+}
+function workMatches(w){
+  const q = $("#workSearch")?.value?.trim().toLowerCase() || "";
+  const status = $("#workStatus")?.value || "all";
+  const startMonth = $("#workStartMonth")?.value || "";
+
+  if(status !== "all" && getWorkStatus(w) !== status) return false;
+  if(startMonth && !(w.startDate || "").startsWith(startMonth)) return false;
+
+  if(!q) return true;
+
+  const hay = [
+    w.name,
+    w.client,
+    w.address
+  ].join(" ").toLowerCase();
+
+  return hay.includes(q);
+}
+
+function renderWorks(){
+  const box = $("#worksList");
+  if(!box) return;
+  box.innerHTML = "";
+
+  const list = worksCache.filter(workMatches);
+
+  if(!list.length){
+    const d = el("div","muted");
+    d.textContent = "No hay obras con esos filtros.";
+    box.appendChild(d);
+    return;
+  }
+
+  for(const w of list){
+    const row = el("div","item");
+
+    const left = el("div");
+    const title = el("div","item__title");
+    title.textContent = w.name || "(Sin nombre de obra)";
+
+        
+const totalWork = getWorkTotal(w.id);
+const budget = Number(w.budget || 0);
+const diff = totalWork - budget;
+const pct = budget ? ((diff / budget) * 100) : 0;
+    const meta = el("div","item__meta");
+   meta.textContent = `
+${w.client || "Sin cliente"} · 
+${w.address || "Sin dirección"} · 
+Inicio: ${w.startDate || "—"} · 
+Fin: ${w.endDate || "—"} · 
+Presupuesto interno: ${money(budget)} · 
+Gasto: ${money(totalWork)} · 
+Desviación: ${money(diff)} (${pct.toFixed(1)}%)
+`;
+
+    left.appendChild(title);
+    left.appendChild(meta);
+
+    const right = el("div","item__actions");
+
+    const pill = el("span", getWorkStatus(w) === "closed" ? "pill" : "pill");
+    pill.textContent = getWorkStatus(w) === "closed" ? "Cerrada" : "Abierta";
+    right.appendChild(pill);
+
+    const btnView = el("button","btn btn--secondary");
+    btnView.textContent = "Ver";
+    btnView.addEventListener("click", ()=> openWorkView(w.id));
+
+    const btnEdit = el("button","btn btn--secondary");
+    btnEdit.textContent = "Editar";
+    btnEdit.addEventListener("click", ()=> openWorkForm(w));
+
+    const btnDel = el("button","btn");
+    btnDel.textContent = "Borrar";
+    btnDel.style.borderColor = "rgba(255,90,106,.45)";
+    btnDel.style.background = "rgba(255,90,106,.14)";
+    btnDel.addEventListener("click", ()=> deleteWorkFlow(w));
+
+    right.appendChild(btnView);
+    right.appendChild(btnEdit);
+    right.appendChild(btnDel);
+
+    row.appendChild(left);
+    row.appendChild(right);
+    box.appendChild(row);
+  }
+}
+
+function openWorkView(id){
+  const w = worksCache.find(x=>x.id===id);
+  if(!w) return;
+
+  const body = el("div");
+  const grid = el("div","form");
+
+  const add = (label, val)=>{
+    const wrap = el("div","full");
+    const lab = el("div","muted small");
+    lab.textContent = label;
+    const value = el("div");
+    value.textContent = val || "—";
+    wrap.appendChild(lab);
+    wrap.appendChild(value);
+    grid.appendChild(wrap);
+  };
+
+  add("Nombre de la obra", w.name);
+  add("Cliente", w.client);
+  add("Dirección", w.address);
+  add("Fecha de inicio", w.startDate);
+  add("Fecha final", w.endDate);
+  add("Estado", getWorkStatus(w) === "closed" ? "Cerrada" : "Abierta");
+
+  body.appendChild(grid);
+
+  modal.open({
+    title: "Ficha de obra",
+    bodyNode: body,
+    onSave: async ()=> modal.close()
+  });
+
+  $("#modalSave").textContent = "Cerrar";
+}
+
+function openWorkForm(work=null){
+  const isEdit = !!work?.id;
+
+  const body = el("div");
+  const form = el("div","form");
+
+  const makeField = (label, value="", type="text", cls="")=>{
+    const wrap = el("div", cls);
+    const lab = el("div","muted small");
+    lab.textContent = label;
+    const input = el("input","input");
+    input.type = type;
+    input.value = value || "";
+    wrap.appendChild(lab);
+    wrap.appendChild(input);
+    return { wrap, input };
+  };
+
+   const fName = makeField("Nombre de la obra", work?.name || "");
+  const fClient = makeField("Cliente", work?.client || "");
+  const fBudget = makeField("Presupuesto interno (€)", (work?.budget ?? "").toString(), "number");
+  fBudget.input.step = "0.01";
+  fBudget.input.inputMode = "decimal";
+
+  const fAddress = makeField("Dirección", work?.address || "", "text", "full");
+  const fStart = makeField("Fecha de inicio", work?.startDate || ymdToday(), "date");
+  const fEnd = makeField("Fecha final", work?.endDate || "", "date");
+
+    [fName.wrap, fClient.wrap, fBudget.wrap, fAddress.wrap, fStart.wrap, fEnd.wrap].forEach(n=>form.appendChild(n));
+  body.appendChild(form);
+
+  modal.open({
+    title: isEdit ? "Editar obra" : "Nueva obra",
+    bodyNode: body,
+    onSave: async ()=>{
+          const data = {
+        name: fName.input.value.trim(),
+        client: fClient.input.value.trim(),
+        budget: safeNum(fBudget.input.value),
+        address: fAddress.input.value.trim(),
+        startDate: fStart.input.value || "",
+        endDate: fEnd.input.value || "",
+        updatedAt: serverTimestamp()
+      };
+
+      if(!data.name) return toast("Falta el nombre de la obra.", "err");
+      if(!data.client) return toast("Falta el cliente.", "err");
+
+      if(data.endDate && data.startDate && data.endDate < data.startDate){
+        return toast("La fecha final no puede ser anterior a la fecha de inicio.", "err");
+      }
+
+      try{
+        if(isEdit){
+          await updateDoc(doc(db,"works",work.id), data);
+          toast("Obra actualizada.", "ok");
+        }else{
+          data.createdAt = serverTimestamp();
+          await addDoc(worksCol, data);
+          toast("Obra creada.", "ok");
+        }
+
+        modal.close();
+        $("#modalSave").textContent = "Guardar";
+        await fetchWorks();
+        renderWorks();
+      }catch(e){
+        toast("Error guardando obra.", "err");
+      }
+    }
+  });
+
+  $("#modalSave").textContent = "Guardar";
+}
+
+async function deleteWorkFlow(work){
+  const linkedInvoices = invoicesCache.some(inv => String(inv.workId || "") === String(work.id));
+
+  if(linkedInvoices){
+    const body = el("div");
+    body.innerHTML = `
+      <div style="font-weight:800;margin-bottom:6px;">Esta obra tiene facturas asociadas.</div>
+      <div class="muted">Por seguridad, no se puede borrar mientras tenga gastos vinculados.</div>
+    `;
+
+    modal.open({
+      title: "No se puede borrar",
+      bodyNode: body,
+      onSave: async ()=> modal.close()
+    });
+
+    $("#modalSave").textContent = "Cerrar";
+    return;
+  }
+
+  const body = el("div");
+  body.innerHTML = `
+    <div>¿Seguro que quieres borrar la obra <b>${work.name || "(sin nombre)"}</b>?</div>
+    <div class="muted small">Esta acción elimina su ficha si todavía no tiene facturas vinculadas.</div>
+  `;
+
+  modal.open({
+    title: "Confirmar borrado de obra",
+    bodyNode: body,
+    onSave: async ()=>{
+      try{
+        await deleteDoc(doc(db,"works",work.id));
+        toast("Obra borrada.", "ok");
+        modal.close();
+        $("#modalSave").textContent = "Guardar";
+        await fetchWorks();
+        renderWorks();
+      }catch(e){
+        toast("Error borrando obra.", "err");
+      }
+    }
+  });
+
+  $("#modalSave").textContent = "Borrar";
+}
 /* ---------------------------
    FACTURAS
 ----------------------------*/
@@ -551,6 +825,7 @@ $("#invSearch").addEventListener("input", ()=> renderInvoices());
 $("#invMonth").addEventListener("change", ()=> renderInvoices());
 $("#invVatRate").addEventListener("change", ()=> renderInvoices());
 $("#invProvider").addEventListener("change", ()=> renderInvoices());
+$("#invWork")?.addEventListener("change", ()=> renderInvoices());
 
 function renderInvoiceProviderOptions(selectEl, selectedId=""){
   // Si se pasa selectEl, lo rellena. Si no, no hace nada (usado en modal).
@@ -571,20 +846,43 @@ function renderInvoiceProviderOptions(selectEl, selectedId=""){
   }
   selectEl.value = selectedId || "";
 }
+function renderInvoiceWorkOptions(selectEl, selectedId=""){
+  if(!selectEl) return;
 
+  selectEl.innerHTML = "";
+
+  const opt0 = el("option");
+  opt0.value = "";
+  opt0.textContent = "Sin obra / gasto general";
+  selectEl.appendChild(opt0);
+
+  const list = [...worksCache]
+    .sort((a,b)=>(a.name || "").localeCompare(b.name || ""));
+
+  for(const w of list){
+    const o = el("option");
+    o.value = w.id;
+    o.textContent = `${w.name || "Obra"}${w.client ? " · " + w.client : ""}`;
+    selectEl.appendChild(o);
+  }
+
+  selectEl.value = selectedId || "";
+}
 function invoiceMatches(i){
   const qTxt = $("#invSearch").value.trim().toLowerCase();
   const m = $("#invMonth").value; // YYYY-MM
   const vat = $("#invVatRate").value;
-    const pid = $("#invProvider")?.value || "";
-  
+  const pid = $("#invProvider")?.value || "";
+  const wid = $("#invWork")?.value || "";
+
   if(pid && String(i.providerId) !== String(pid)) return false;
+  if(wid && String(i.workId || "") !== String(wid)) return false;
   if(m && !(i.invoiceDate || "").startsWith(m)) return false;
   if(vat && String(i.vatRate) !== String(vat)) return false;
 
   if(!qTxt) return true;
-  const hay = [
-    i.providerName, i.invoiceNo, i.concept
+   const hay = [
+    i.providerName, i.invoiceNo, i.concept, i.workName, i.workClient
   ].join(" ").toLowerCase();
   return hay.includes(qTxt);
 }
@@ -607,8 +905,9 @@ function renderInvoices(){
     const left = el("div");
     const title = el("div","item__title");
     title.textContent = `${i.providerName || "Proveedor"} · ${i.invoiceNo || "Sin nº"}`;
-    const meta = el("div","item__meta");
-    meta.textContent = `${i.invoiceDate || "—"} · IVA ${i.vatRate || 0}% · Base ${money(i.base)} · Total ${money(i.total)}`;
+        const meta = el("div","item__meta");
+    const workLabel = i.workName ? ` · Obra: ${i.workName}` : "";
+    meta.textContent = `${i.invoiceDate || "—"} · IVA ${i.vatRate || 0}% · Base ${money(i.base)} · Total ${money(i.total)}${workLabel}`;
 
     left.appendChild(title);
     left.appendChild(meta);
@@ -650,7 +949,8 @@ function openInvoiceView(id){
     grid.appendChild(w);
   };
 
-  add("Proveedor", i.providerName);
+   add("Proveedor", i.providerName);
+  add("Obra asociada", i.workName ? `${i.workName}${i.workClient ? " · " + i.workClient : ""}` : "—");
   add("Fecha factura", i.invoiceDate);
   add("Nº factura", i.invoiceNo);
   add("Concepto", i.concept);
@@ -695,7 +995,12 @@ function openInvoiceForm(inv=null){
   const fDate = el("input","input"); fDate.type="date";
   fDate.value = inv?.invoiceDate || ymdToday();
   fDateWrap.appendChild(fDateLab); fDateWrap.appendChild(fDate);
-
+    // Obra select
+  const wWrap = el("div");
+  const wLab = el("div","muted small"); wLab.textContent = "Obra asociada";
+  const wSel = el("select","input");
+  wWrap.appendChild(wLab); wWrap.appendChild(wSel);
+  renderInvoiceWorkOptions(wSel, inv?.workId || "");
   const fNoWrap = el("div");
   const fNoLab = el("div","muted small"); fNoLab.textContent = "Nº factura";
   const fNo = el("input","input"); fNo.value = inv?.invoiceNo || "";
@@ -929,8 +1234,8 @@ function openInvoiceForm(inv=null){
   recalc();
   checkDuplicates();
 
-  [
-  pWrap, fDateWrap, fNoWrap, radar,
+   [
+  pWrap, wWrap, fDateWrap, fNoWrap, radar,
   conceptWrap, mixedWrap,
   baseWrap, vatWrap, calcWrap, mixedBox,
   paidWrap, attachWrap, attachInfo
@@ -947,7 +1252,12 @@ function openInvoiceForm(inv=null){
 
       const prov = providersCache.find(p=>p.id===providerId);
       if(!prov) return toast("Proveedor no válido.", "err");
+      const workId = wSel.value || "";
+      const work = workId ? worksCache.find(w => w.id === workId) : null;
 
+      if(workId && !work){
+        return toast("La obra seleccionada no es válida.", "err");
+      }      
       // --- Cálculo importes: simple o mixto ---
 let baseVal = 0;
 let vatRate = +safeNum(vatSel.value);
@@ -983,9 +1293,12 @@ if (typeof mixedChk !== "undefined" && mixedChk.checked) {
   total = +(baseVal + vatAmount).toFixed(2);
 }
 
-      const data = {
+           const data = {
         providerId,
         providerName: prov.nameCommercial || prov.legalName || "Proveedor",
+        workId: work ? work.id : "",
+        workName: work ? (work.name || "") : "",
+        workClient: work ? (work.client || "") : "",
         invoiceDate: fDate.value || ymdToday(),
         invoiceNo: fNo.value.trim(),
         concept: concept.value.trim(),
@@ -1074,19 +1387,173 @@ async function deleteInvoiceFlow(inv){
 $("#repMonth").value = monthToday();
 $("#invMonth").value = monthToday();
 
-$("#btnRunMonthly").addEventListener("click", ()=> {
+$("#btnRunMonthly")?.addEventListener("click", ()=> {
   const month = $("#repMonth").value;
   setPrintHeader({ tipo: "Informe mensual", periodo: month || "—" });
   runMonthlyReport(month);
 });
-$("#btnRunQuarter").addEventListener("click", ()=>{
+
+$("#btnRunQuarter")?.addEventListener("click", ()=>{
   const year = Number($("#repYear").value || new Date().getFullYear());
   const q = Number($("#repQuarter").value);
   setPrintHeader({ tipo: "Informe trimestral", periodo: `${year} Q${q}` });
   runQuarterReport(year, q);
 });
+
+$("#btnRunWork")?.addEventListener("click", ()=>{
+  runWorkReport();
+});
+
 $("#repYear").value = String(new Date().getFullYear());
 
+function runWorkReport(){
+  const workId = $("#repWork")?.value || "";
+
+  if(!workId){
+    return toast("Selecciona una obra.", "err");
+  }
+
+  const work = worksCache.find(w => String(w.id) === String(workId));
+  if(!work){
+    return toast("Obra no encontrada.", "err");
+  }
+
+  const list = invoicesCache.filter(i => String(i.workId || "") === String(workId));
+
+  setPrintHeader({
+    tipo: "Informe por obra",
+    periodo: work.name || "Obra"
+  });
+
+  if(!list.length){
+    const box = $("#reportOut");
+    if(box){
+      box.innerHTML = `
+        <div class="card">
+          <h2>${work.name || "Obra"}</h2>
+          <div class="muted">${work.client || ""} · ${work.address || ""}</div>
+          <div class="mt small">Inicio: ${work.startDate || "—"} · Fin: ${work.endDate || "—"}</div>
+        </div>
+
+        <div class="card">
+          <h3>Resumen económico</h3>
+          <div class="muted">Esta obra no tiene facturas registradas.</div>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  let base = 0;
+  let vat = 0;
+  let total = 0;
+
+  for(const i of list){
+    base += safeNum(i.base);
+    vat += safeNum(i.vatAmount);
+    total += safeNum(i.total);
+  }
+
+  base = +base.toFixed(2);
+  vat = +vat.toFixed(2);
+  total = +total.toFixed(2);
+
+  const avg = list.length ? +(total / list.length).toFixed(2) : 0;
+
+  renderWorkReport({
+    work,
+    list,
+    base,
+    vat,
+    total,
+    avg
+  });
+}
+
+function renderWorkReport(data){
+  const { work, list, base, vat, total, avg } = data;
+
+  const box = $("#reportOut");
+  if(!box) return;
+
+   box.innerHTML = `
+    <div class="card">
+      <h2>${work.name || "Obra"}</h2>
+      <div class="muted">${work.client || ""} · ${work.address || ""}</div>
+      <div class="mt small">Inicio: ${work.startDate || "—"} · Fin: ${work.endDate || "—"}</div>
+    </div>
+
+    <div class="card">
+      <h3>Resumen económico</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th>Importe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Total Base</td><td>${money(base)}</td></tr>
+          <tr><td>Total IVA</td><td>${money(vat)}</td></tr>
+          <tr><td>Total Gasto</td><td>${money(total)}</td></tr>
+          <tr><td>Nº Facturas</td><td>${list.length}</td></tr>
+          <tr><td>Gasto medio</td><td>${money(avg)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Detalle de facturas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Concepto</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(i => `
+            <tr>
+              <td>${i.invoiceDate || ""}</td>
+              <td>${i.providerName || ""}</td>
+              <td>${i.concept || ""}</td>
+              <td>${money(i.total)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+
+   <div class="row mt">
+  <button id="btnPrintWorkReport" class="btn">Generar PDF (Imprimir)</button>
+  <button id="btnCSVWorkReport" class="btn">Exportar CSV</button>
+</div>
+  `;
+
+  const btnPrintWorkReport = $("#btnPrintWorkReport");
+  if(btnPrintWorkReport){
+    btnPrintWorkReport.addEventListener("click", (e)=>{
+      e.preventDefault();
+      window.print();
+    });
+  }
+
+  const btnCSVWorkReport = $("#btnCSVWorkReport");
+  if(btnCSVWorkReport){
+    btnCSVWorkReport.addEventListener("click", (e)=>{
+      e.preventDefault();
+      exportWorkCSV(data);
+    });
+  }
+}
+const btnCSVWorkReport = $("#btnCSVWorkReport");
+if(btnCSVWorkReport){
+  btnCSVWorkReport.addEventListener("click", ()=>{
+    exportWorkCSV(data);
+  });
+}
 function invoicesInRange(startYmd, endYmd){
   return invoicesCache.filter(i => (i.invoiceDate >= startYmd && i.invoiceDate <= endYmd));
 }
@@ -1431,7 +1898,56 @@ function exportCsv(title, periodLabel, list, summary){
   a.click();
   URL.revokeObjectURL(url);
 }
+function exportWorkCSV(data){
+  const { work, list, base, vat, total, avg } = data;
 
+  let csv = [];
+
+  // Cabecera obra
+  csv.push(["OBRA", work.name || ""]);
+  csv.push(["CLIENTE", work.client || ""]);
+  csv.push(["DIRECCIÓN", work.address || ""]);
+  csv.push(["FECHA INICIO", work.startDate || ""]);
+  csv.push(["FECHA FIN", work.endDate || ""]);
+  csv.push([]);
+
+  // Resumen
+  csv.push(["RESUMEN"]);
+  csv.push(["Total Base", base]);
+  csv.push(["Total IVA", vat]);
+  csv.push(["Total Gasto", total]);
+  csv.push(["Nº Facturas", list.length]);
+  csv.push(["Gasto medio", avg]);
+  csv.push([]);
+
+  // Detalle
+  csv.push(["DETALLE"]);
+  csv.push(["Fecha", "Proveedor", "Concepto", "Base", "IVA", "Total"]);
+
+  for(const i of list){
+    csv.push([
+      i.invoiceDate || "",
+      i.providerName || "",
+      i.concept || "",
+      i.base || 0,
+      i.vatAmount || 0,
+      i.total || 0
+    ]);
+  }
+
+  // Convertir a texto CSV
+  const csvContent = csv.map(r => r.join(";")).join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `obra_${(work.name || "informe").replace(/\s+/g,"_")}.csv`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
 function runMonthlyReport(yyyyMm){
   if(!yyyyMm) return toast("Elige un mes.", "err");
   const start = `${yyyyMm}-01`;
@@ -1456,6 +1972,7 @@ function runQuarterReport(year, q){
 async function refreshAll(){
   await fetchProviders();
   await fetchInvoices();
+  await fetchWorks();
 
   // Rellenar filtro de proveedor en pestaña Facturas
   const invProv = $("#invProvider");
@@ -1471,8 +1988,37 @@ async function refreshAll(){
       invProv.appendChild(o);
     }
   }
+// Rellenar selector de obras en informes
+const repWork = $("#repWork");
+if(repWork){
+  repWork.innerHTML = `<option value="">Selecciona obra</option>`;
+  const list = [...worksCache]
+    .sort((a,b)=>(a.name||"").localeCompare(b.name||""));
 
+  for(const w of list){
+    const o = document.createElement("option");
+    o.value = w.id;
+    o.textContent = `${w.name || "Obra"}${w.client ? " · " + w.client : ""}`;
+    repWork.appendChild(o);
+  }
+}
+  // Rellenar filtro de obra en pestaña Facturas
+  const invWork = $("#invWork");
+  if(invWork){
+    invWork.innerHTML = `<option value="">Todas las obras</option>`;
+
+    const list = [...worksCache]
+      .sort((a,b)=>(a.name || "").localeCompare(b.name || ""));
+
+    for(const w of list){
+      const o = document.createElement("option");
+      o.value = w.id;
+      o.textContent = `${w.name || "Obra"}${w.client ? " · " + w.client : ""}`;
+      invWork.appendChild(o);
+    }
+  }
   renderProviders();
+  renderWorks();
   renderInvoices();
 }
 
